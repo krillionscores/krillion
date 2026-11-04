@@ -153,7 +153,7 @@ footer { margin-top: 56px; color: var(--muted); font-size: 14px; max-width: 60ch
   <div id="app"></div>
 
   <footer>
-    <p>Tap a name in the leaderboard to follow that player through the page. Zones use the real ocean depth zones: twilight from 200 m, midnight from 1,000 m, the abyss from 4,000 m and the hadal zone from 6,000 m. The faint shapes are mountains turned upside down: Ben Nevis (1,345 m), Mount Fuji (3,776 m), Mont Blanc (4,806 m) and Kilimanjaro (5,895 m), each shown when its summit falls within the depths on screen.</p>
+    <p>Tap a name in the leaderboard to follow that player through the page. Zones use the real ocean depth zones: twilight from 200 m, midnight from 1,000 m, the abyss from 4,000 m and the hadal zone from 6,000 m. The faint shapes are mountains turned upside down: Ben Nevis (1,345 m), Mount Olympus (2,918 m), Mount Fuji (3,776 m), Mont Blanc (4,806 m) and Kilimanjaro (5,895 m), each shown when its summit falls within the depths on screen.</p>
     <p>Each point is 10 m of depth, so a perfect 700-point dive reaches 7,000 m. A win means the top score on a dive that at least two people played, and tied scores share the win. A streak counts consecutive daily dives.</p>
   </footer>
 </main>
@@ -429,6 +429,8 @@ function depthColumn(stats) {
 const PEAKS = [
   { name: "Ben Nevis", m: 1345, dx: -74, steady: true,
     shape: [[-160, 2000], [-70, 70], [-40, 30], [-22, 10], [-8, 2], [6, 0], [22, 3], [30, 12], [36, 30], [44, 70], [60, 2000]] },
+  { name: "Mount Olympus", m: 2918, dx: -80, temple: true,
+    shape: [[-200, 2000], [-80, 80], [-55, 48], [-40, 40], [-28, 18], [-19, 6], [-18, 0], [18, 0], [20, 5], [30, 14], [44, 30], [60, 44], [90, 80], [200, 2000]] },
   { name: "Mount Fuji", m: 3776, dx: -88,
     shape: [[-220, 2000], [-64, 72], [-32, 32], [-12, 8], [-8, 0], [-3, 3], [3, 3], [8, 0], [12, 8], [32, 32], [64, 72], [220, 2000]] },
   { name: "Mont Blanc", m: 4806, dx: -70,
@@ -468,13 +470,24 @@ function drawPeaks(column, lo, hi, y) {
       add(g, "stop", { offset: 0.55, "stop-color": "#fff", "stop-opacity": 0.08 });
       add(g, "stop", { offset: 1, "stop-color": "#fff", "stop-opacity": 0.26 });
       fill = "url(#peak" + i + ")";
-      prevTip = ty;
+      prevTip = ty + (pk.temple ? 22 : 0);
     }
     add(svg, "polygon", { points: pts, fill });
+    // A small temple on the summit, hanging upside down like the mountain: steps, columns, then the pediment.
+    const extra = pk.temple ? 22 : 0;
+    if (pk.temple) {
+      const tg = add(svg, "g", { fill: "rgba(255,255,255,0.34)" });
+      const r = (x, yy, w, h) => add(tg, "rect", { x: tx + x, y: ty + yy, width: w, height: h });
+      r(-17, 0, 34, 1.6);
+      r(-15.5, 1.6, 31, 1.6);
+      for (let c = 0; c < 6; c++) r(-13.5 + c * 5.2, 3.2, 2.2, 9.6);
+      r(-15, 12.8, 30, 2.4);
+      add(tg, "polygon", { points: `${tx - 16},${ty + 15.2} ${tx + 16},${ty + 15.2} ${tx},${ty + 20.5}` });
+    }
     // Put the name below the summit, or above or beside it if that would clash with a zone line or zone name.
     const zoneYs = ZONES.map(z => z[0]).filter(m => m < hi).map(m => y(Math.max(m, lo)));
     const clear = (a, b) => zoneYs.every(zy => (zy < a - 3 || zy > b + 3) && (zy + 21 < a || zy + 6 > b));
-    const spot = clear(ty + 3, ty + 17) ? { x: tx, y: ty + 14, a: "middle" }
+    const spot = clear(ty + extra + 3, ty + extra + 17) ? { x: tx, y: ty + extra + 14, a: "middle" }
       : clear(ty - 19, ty - 5) ? { x: tx, y: ty - 8, a: "middle" }
       : { x: tx - 16, y: ty + 4, a: "end" };
     add(svg, "text", { x: spot.x, y: spot.y, "text-anchor": spot.a, "font-size": 11, fill: "rgba(255,255,255,0.6)" },
