@@ -1,0 +1,13 @@
+{
+  "updated": "2026-11-04T14:09:26Z",
+  "scores": [
+    { "dive": 112, "player": "James", "points": 385 },
+    { "dive": 112, "player": "Felix", "points": 370 },
+    { "dive": 112, "player": "Dexter", "points": 440 },
+    { "dive": 112, "player": "Theo", "points": 180 },
+    { "dive": 112, "player": "Alfie", "points": 220 },
+    { "dive": 112, "player": "Leo", "points": 445 },
+    { "dive": 112, "player": "Rat", "points": 330 },
+    { "dive": 112, "player": "Joe", "points": 200 }
+  ]
+}
