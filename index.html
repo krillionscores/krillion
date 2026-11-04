@@ -281,7 +281,7 @@ function todayPanel(stats) {
     wrap.appendChild(c);
   };
   const top = list[0].points, low = list[list.length - 1].points;
-  card("Deepest diver on " + fmtDate(diveDate(d)), sameScore(list, top) + " \ud83d\udc51", metres(top) + " on dive " + d);
+  card("Deepest diver on " + fmtDate(diveDate(d)), sameScore(list, top) + " \ud83d\udc51", "Reached " + metres(top));
   if (list.length >= 3) card("Plankton of the day", sameScore(list, low) + " \ud83e\udd90", "Shallowest dive at " + metres(low));
   const today = list.reduce((a, s) => a + s.points * 10, 0);
   card("Group depth today", today.toLocaleString("en-GB") + " m", (today / 8849).toFixed(1) + " times the height of Everest");
@@ -629,7 +629,7 @@ function recentDives(stats) {
   for (const d of dives) {
     const list = [...stats.byDive.get(d)].sort((a, b) => b.points - a.points);
     const li = el("li");
-    li.appendChild(el("span", { class: "when" }, fmtDate(diveDate(d)) + ", dive " + d));
+    li.appendChild(el("span", { class: "when" }, fmtDate(diveDate(d))));
     const res = el("span", { class: "res" });
     const top = list[0].points;
     list.forEach(x => res.appendChild(el("span", { class: x.points === top && list.length > 1 ? "top" : "" }, x.player + " " + x.points)));
