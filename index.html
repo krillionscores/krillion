@@ -524,7 +524,7 @@ function clearPeakLabels(column) {
 function leaderboard(stats) {
   const box = el("div");
   box.appendChild(el("h2", {}, "Leaderboard"));
-  box.appendChild(el("p", { class: "note" }, stats.dayLabel + " shows each player’s score on " + (stats.isToday ? "today’s" : "the latest") + " dive, and players without one follow, from the lowest average up. Tap a column heading to sort by it, and tap again to reverse. Zone is where your average dive ends."));
+  box.appendChild(el("p", { class: "note" }, stats.dayLabel + " shows each player’s score on " + (stats.isToday ? "today’s" : "the latest") + " dive, and players without one follow, from the highest average down. Tap a column heading to sort by it, and tap again to reverse. Zone is where your average dive ends."));
   const badges = badgesFor(stats);
   const topToday = Math.max(...stats.players.map(p => p.today ?? -1));
   const cols = [
@@ -564,8 +564,8 @@ function leaderboard(stats) {
     const c = cols[sortCol];
     const order = [...stats.players].sort((a, b) => {
       const va = c.val(a), vb = c.val(b);
-      // Players with no score in this column (only possible for today's) always go last, by average from lowest.
-      if (va === null || vb === null) return va === null && vb === null ? a.avg - b.avg : va === null ? 1 : -1;
+      // Players with no score in this column (only possible for today's) always go last, by average from highest.
+      if (va === null || vb === null) return va === null && vb === null ? b.avg - a.avg : va === null ? 1 : -1;
       const d = c.text ? va.localeCompare(vb) : va - vb;
       return (sortDir === "desc" ? -d : d) || b.avg - a.avg || a.name.localeCompare(b.name);
     });
