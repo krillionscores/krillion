@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-05T10:51:36Z",
+  "updated": "2026-11-05T11:26:09Z",
   "scores": [
     { "dive": 112, "player": "James", "points": 385 },
     { "dive": 112, "player": "Felix", "points": 370 },
@@ -15,6 +15,9 @@
     { "dive": 113, "player": "Felix", "points": 415 },
     { "dive": 113, "player": "Rat", "points": 420 },
     { "dive": 113, "player": "Joe", "points": 360 },
-    { "dive": 113, "player": "Joe P", "points": 330 }
+    { "dive": 113, "player": "Joe P", "points": 330 },
+    { "dive": 113, "player": "James", "points": 395 },
+    { "dive": 113, "player": "Dexter", "points": 435 },
+    { "dive": 113, "player": "Leo", "points": 410 }
   ]
 }
