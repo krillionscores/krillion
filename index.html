@@ -636,7 +636,7 @@ function headToHead(stats) {
         if (pb === undefined) continue;
         if (pa > pb) w++; else if (pa < pb) l++; else d++;
       }
-      const txt = w + l + d === 0 ? "" : w + "–" + l + (d ? "–" + d : "");
+      const txt = w + l + d === 0 ? "" : w + "–" + l;
       r.appendChild(el("td", { class: w > l ? "win" : "" }, txt));
     });
     body.appendChild(r);
