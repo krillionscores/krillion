@@ -101,6 +101,9 @@ td.rank { color: var(--muted); width: 2em; }
 td.name { font-weight: 600; }
 td.today-top { color: var(--krill); font-weight: 600; }
 td.today-none { color: var(--muted); }
+th button.sort { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; white-space: nowrap; }
+th button.sort:hover, th[aria-sort] button.sort { color: var(--ink); }
+th .arrow { font-size: 10px; }
 .col-note { margin: 0 0 12px; }
 .scroll { overflow-x: auto; }
 .note { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
@@ -521,18 +524,68 @@ function clearPeakLabels(column) {
 function leaderboard(stats) {
   const box = el("div");
   box.appendChild(el("h2", {}, "Leaderboard"));
-  box.appendChild(el("p", { class: "note" }, "Ranked by average points per dive. " + stats.dayLabel + " shows each player’s score on " + (stats.isToday ? "today’s" : "the latest") + " dive. Zone is where your average dive ends."));
+  box.appendChild(el("p", { class: "note" }, stats.dayLabel + " shows each player’s score on " + (stats.isToday ? "today’s" : "the latest") + " dive, and players without one follow, from the lowest average up. Tap a column heading to sort by it, and tap again to reverse. Zone is where your average dive ends."));
   const badges = badgesFor(stats);
   const topToday = Math.max(...stats.players.map(p => p.today ?? -1));
+  const cols = [
+    { label: "" },
+    { label: "Player", val: p => p.name, text: true },
+    { label: stats.dayLabel, val: p => p.today },
+    { label: "Dives", val: p => p.dives },
+    { label: "Average", val: p => p.avg },
+    { label: "Best", val: p => p.best },
+    { label: "Wins", val: p => p.wins },
+    { label: "Streak", val: p => p.streak },
+    { label: "Zone", val: p => p.avg }
+  ];
+  let sortCol = 2, sortDir = "desc";
   const sc = el("div", { class: "scroll" });
   const t = el("table");
   const head = el("tr");
-  ["", "Player", stats.dayLabel, "Dives", "Average", "Best", "Wins", "Streak", "Zone"].forEach(h => head.appendChild(el("th", { scope: "col" }, h)));
+  const ths = cols.map((c, i) => {
+    const th = el("th", { scope: "col" });
+    if (c.val) {
+      const b = el("button", { type: "button", class: "sort" }, c.label);
+      b.appendChild(el("span", { class: "arrow", "aria-hidden": "true" }));
+      b.addEventListener("click", () => {
+        if (sortCol === i) sortDir = sortDir === "desc" ? "asc" : "desc";
+        else { sortCol = i; sortDir = c.text ? "asc" : "desc"; }
+        sortRows();
+      });
+      th.appendChild(b);
+    }
+    head.appendChild(th);
+    return th;
+  });
   t.appendChild(el("thead")).appendChild(head);
   const body = el("tbody");
-  stats.players.forEach((p, i) => {
+  const rows = new Map();
+  function sortRows() {
+    const c = cols[sortCol];
+    const order = [...stats.players].sort((a, b) => {
+      const va = c.val(a), vb = c.val(b);
+      // Players with no score in this column (only possible for today's) always go last, by average from lowest.
+      if (va === null || vb === null) return va === null && vb === null ? a.avg - b.avg : va === null ? 1 : -1;
+      const d = c.text ? va.localeCompare(vb) : va - vb;
+      return (sortDir === "desc" ? -d : d) || b.avg - a.avg || a.name.localeCompare(b.name);
+    });
+    order.forEach((p, i) => {
+      const r = rows.get(p.name);
+      r.querySelector(".rank").textContent = String(i + 1);
+      body.appendChild(r);
+    });
+    ths.forEach((th, i) => {
+      if (!cols[i].val) return;
+      const on = i === sortCol;
+      if (on) th.setAttribute("aria-sort", sortDir === "desc" ? "descending" : "ascending");
+      else th.removeAttribute("aria-sort");
+      th.querySelector(".arrow").textContent = on ? (sortDir === "desc" ? " ▼" : " ▲") : "";
+    });
+  }
+  stats.players.forEach(p => {
     const r = el("tr", { "data-player": p.name });
-    r.appendChild(el("td", { class: "rank" }, String(i + 1)));
+    rows.set(p.name, r);
+    r.appendChild(el("td", { class: "rank" }));
     const nc = el("td", { class: "name" });
     const nb = el("button", { type: "button", "aria-label": "Follow " + p.name }, p.name);
     nb.addEventListener("click", () => setFocus(p.name));
@@ -550,8 +603,8 @@ function leaderboard(stats) {
     r.appendChild(el("td", { title: "Longest: " + p.bestStreak }, String(p.streak)));
     const zn = zoneOf(p.avg * 10);
     r.appendChild(el("td", { title: "Home of " + zn[2] }, zn[1]));
-    body.appendChild(r);
   });
+  sortRows();
   t.appendChild(body);
   sc.appendChild(t);
   box.appendChild(sc);
