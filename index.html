@@ -99,6 +99,9 @@ th { font-weight: 600; font-size: 14px; color: var(--muted); }
 th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
 td.rank { color: var(--muted); width: 2em; }
 td.name { font-weight: 600; }
+td.today-top { color: var(--krill); font-weight: 600; }
+td.today-none { color: var(--muted); }
+.col-note { margin: 0 0 12px; }
 .scroll { overflow-x: auto; }
 .note { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
 
@@ -166,6 +169,10 @@ const COLOURS = ["#FF7E9B", "#5FD3C4", "#F6C453", "#8FA8FF", "#B98CF0", "#7BD66B
 
 const fmtDate = d => d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 const diveDate = n => new Date(DIVE_ONE + (n - 1) * DAY);
+const currentDive = () => {
+  const [yy, mm, dd] = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" }).split("-").map(Number);
+  return Math.round((Date.UTC(yy, mm - 1, dd) - DIVE_ONE) / DAY) + 1;
+};
 const metres = p => (p * 10).toLocaleString("en-GB") + " m";
 const ZONES = [[0, "Sunlight zone", "sardines"], [200, "Twilight zone", "lanternfish"], [1000, "Midnight zone", "anglerfish"], [4000, "Abyss", "dumbo octopuses"], [6000, "Hadal zone", "snailfish"]];
 const zoneOf = m => [...ZONES].reverse().find(z => m >= z[0]);
@@ -220,6 +227,7 @@ function computeStats(scores) {
     const mean3 = a => a.reduce((x, y) => x + y, 0) / a.length;
     const last = list[list.length - 1];
     const current = last.dive >= latestDive - 1 ? run : 0;
+    const todays = list.find(s => s.dive === latestDive);
     return {
       name, list,
       dives: list.length,
@@ -230,6 +238,7 @@ function computeStats(scores) {
       best: Math.max(...pts),
       latest: last.points,
       latestDive: last.dive,
+      today: todays ? todays.points : null,
       wins: wins.get(name) || 0,
       streak: current,
       bestStreak: best
@@ -242,7 +251,8 @@ function computeStats(scores) {
     const low = Math.min(...list.map(s => s.points));
     for (const s of list) if (s.points === low) players.find(p => p.name === s.player).plankton++;
   }
-  return { byDive, players, latestDive };
+  const isToday = latestDive === currentDive();
+  return { byDive, players, latestDive, isToday, dayLabel: isToday ? "Today" : fmtDate(diveDate(latestDive)) };
 }
 
 function render(data) {
@@ -345,24 +355,17 @@ function records(stats) {
 
 function depthColumn(stats) {
   const wrap = el("div");
-  const modes = [["avg", "Average"], ["latest", "Latest"], ["best", "Best"]];
-  const toggle = el("div", { class: "toggle", role: "group", "aria-label": "Depth shown" });
+  const divers = stats.players.filter(p => p.today !== null);
+  const n = divers.length;
+  wrap.appendChild(el("h2", {}, stats.isToday ? "Today’s dive" : "Latest dive"));
+  wrap.appendChild(el("p", { class: "note col-note" }, fmtDate(diveDate(stats.latestDive)) + ", " + n + (n === 1 ? " diver" : " divers") + (stats.isToday ? " so far" : "")));
   const column = el("div", { class: "column", role: "img" });
-  modes.forEach(([key, label], i) => {
-    const b = el("button", { type: "button", "aria-pressed": i === 0 ? "true" : "false" }, label);
-    b.addEventListener("click", () => {
-      toggle.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
-      draw(key, false);
-    });
-    toggle.appendChild(b);
-  });
-  wrap.appendChild(toggle);
   wrap.appendChild(column);
 
-  function draw(key, sink) {
+  function draw(sink) {
     column.innerHTML = "";
     const H = column.clientHeight || 600;
-    const vals = stats.players.map(p => ({ p, m: p[key] * 10 }));
+    const vals = divers.map(p => ({ p, m: p.today * 10 }));
     const lo0 = Math.min(...vals.map(v => v.m)), hi0 = Math.max(...vals.map(v => v.m));
     let lo = Math.max(0, Math.floor((lo0 - 400) / 500) * 500);
     let hi = Math.min(7000, Math.ceil((hi0 + 400) / 500) * 500);
@@ -405,7 +408,7 @@ function depthColumn(stats) {
       const tag = el("div", { class: "tag" });
       tag.style.top = (ly - dy - 10) + "px";
       tag.appendChild(el("b", {}, p.name));
-      tag.appendChild(el("small", {}, metres(Math.round(p[key]))));
+      tag.appendChild(el("small", {}, metres(p.today)));
       d.appendChild(tag);
       if (ly !== dy) {
         const l = el("div", { class: "leader" });
@@ -414,13 +417,12 @@ function depthColumn(stats) {
       }
       column.appendChild(d);
     }
-    const label = { avg: "average", latest: "latest", best: "best" }[key];
-    column.setAttribute("aria-label", "Each player's " + label + " depth: " +
-      stats.players.map(p => p.name + " " + metres(Math.round(p[key]))).join(", "));
+    column.setAttribute("aria-label", "Depth reached on " + fmtDate(diveDate(stats.latestDive)) + ": " +
+      divers.map(p => p.name + " " + metres(p.today)).join(", "));
     clearPeakLabels(column);
     applyFocus();
   }
-  requestAnimationFrame(() => draw("avg", true));
+  requestAnimationFrame(() => draw(true));
   return wrap;
 }
 
@@ -519,12 +521,13 @@ function clearPeakLabels(column) {
 function leaderboard(stats) {
   const box = el("div");
   box.appendChild(el("h2", {}, "Leaderboard"));
-  box.appendChild(el("p", { class: "note" }, "Ranked by average points per dive. Zone is where your average dive ends."));
+  box.appendChild(el("p", { class: "note" }, "Ranked by average points per dive. " + stats.dayLabel + " shows each player’s score on " + (stats.isToday ? "today’s" : "the latest") + " dive. Zone is where your average dive ends."));
   const badges = badgesFor(stats);
+  const topToday = Math.max(...stats.players.map(p => p.today ?? -1));
   const sc = el("div", { class: "scroll" });
   const t = el("table");
   const head = el("tr");
-  ["", "Player", "Dives", "Average", "Best", "Wins", "Streak", "Zone"].forEach(h => head.appendChild(el("th", { scope: "col" }, h)));
+  ["", "Player", stats.dayLabel, "Dives", "Average", "Best", "Wins", "Streak", "Zone"].forEach(h => head.appendChild(el("th", { scope: "col" }, h)));
   t.appendChild(el("thead")).appendChild(head);
   const body = el("tbody");
   stats.players.forEach((p, i) => {
@@ -537,6 +540,9 @@ function leaderboard(stats) {
     const bl = badges.get(p.name);
     if (bl.length) nc.appendChild(el("span", { class: "badges", title: bl.map(b => b.title).join(", "), "aria-label": bl.map(b => b.title).join(", ") }, bl.map(b => b.icon).join(" ")));
     r.appendChild(nc);
+    r.appendChild(p.today === null
+      ? el("td", { class: "today-none", title: "No score yet" }, "·")
+      : el("td", { class: p.today === topToday ? "today-top" : "" }, String(p.today)));
     r.appendChild(el("td", {}, String(p.dives)));
     r.appendChild(el("td", {}, Math.round(p.avg).toString()));
     r.appendChild(el("td", {}, String(p.best)));
