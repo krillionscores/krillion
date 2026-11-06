@@ -317,6 +317,7 @@ function badgesFor(stats) {
   award("\ud83c\udfaf", "Most consistent", p => p.dives >= 5 ? p.sd : null, Math.min);
   award("\ud83d\udcc8", "Most improved", p => p.improve > 0 ? p.improve : null, Math.max);
   award("\ud83e\udd90", "Most plankton days", p => p.plankton || null, Math.max);
+  stats.players.filter(p => p.best > 520).forEach(p => out.get(p.name).push({ icon: "\ud83e\udde2", title: "" }));
   return out;
 }
 
@@ -591,7 +592,7 @@ function leaderboard(stats) {
     nb.addEventListener("click", () => setFocus(p.name));
     nc.appendChild(nb);
     const bl = badges.get(p.name);
-    if (bl.length) nc.appendChild(el("span", { class: "badges", title: bl.map(b => b.title).join(", "), "aria-label": bl.map(b => b.title).join(", ") }, bl.map(b => b.icon).join(" ")));
+    if (bl.length) nc.appendChild(el("span", { class: "badges", title: bl.map(b => b.title).filter(Boolean).join(", "), "aria-label": bl.map(b => b.title).filter(Boolean).join(", ") }, bl.map(b => b.icon).join(" ")));
     r.appendChild(nc);
     r.appendChild(p.today === null
       ? el("td", { class: "today-none", title: "No score yet" }, "·")
