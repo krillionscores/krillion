@@ -211,6 +211,13 @@ function computeStats(scores) {
     byPlayer.get(s.player).push(s);
   }
   const latestDive = Math.max(...byDive.keys());
+  // Each score's difference from the group average on its dive, only for dives at least two people played.
+  const vsDay = new Map();
+  for (const list of byDive.values()) {
+    if (list.length < 2) continue;
+    const dayAvg = list.reduce((a, s) => a + s.points, 0) / list.length;
+    for (const s of list) vsDay.set(s, s.points - dayAvg);
+  }
   const wins = new Map();
   for (const list of byDive.values()) {
     if (list.length < 2) continue;
@@ -231,10 +238,12 @@ function computeStats(scores) {
     const last = list[list.length - 1];
     const current = last.dive >= latestDive - 1 ? run : 0;
     const todays = list.find(s => s.dive === latestDive);
+    const diffs = list.filter(s => vsDay.has(s)).map(s => vsDay.get(s));
     return {
       name, list,
       dives: list.length,
       avg,
+      vsAvg: diffs.length ? diffs.reduce((a, b) => a + b, 0) / diffs.length : null,
       sd: Math.sqrt(pts.reduce((a, b) => a + (b - avg) ** 2, 0) / pts.length),
       improve: pts.length >= 6 ? mean3(pts.slice(-3)) - mean3(pts.slice(0, 3)) : null,
       plankton: 0,
@@ -525,7 +534,7 @@ function clearPeakLabels(column) {
 function leaderboard(stats) {
   const box = el("div");
   box.appendChild(el("h2", {}, "Leaderboard"));
-  box.appendChild(el("p", { class: "note" }, stats.dayLabel + " shows each player’s score on " + (stats.isToday ? "today’s" : "the latest") + " dive, and players without one follow, from the highest average down. Tap a column heading to sort by it, and tap again to reverse. Zone is where your average dive ends."));
+  box.appendChild(el("p", { class: "note" }, stats.dayLabel + " shows each player’s score on " + (stats.isToday ? "today’s" : "the latest") + " dive, and players without one follow, from the highest average down. Tap a column heading to sort by it, and tap again to reverse. Vs avg is how far above or below the group average you score on the dives you play, so a 400 on a hard day counts for more than a 400 on an easy one; it ignores dives only one person played. Zone is where your average dive ends."));
   const badges = badgesFor(stats);
   const topToday = Math.max(...stats.players.map(p => p.today ?? -1));
   const cols = [
@@ -534,6 +543,7 @@ function leaderboard(stats) {
     { label: stats.dayLabel, val: p => p.today },
     { label: "Dives", val: p => p.dives },
     { label: "Average", val: p => p.avg },
+    { label: "Vs avg", val: p => p.vsAvg },
     { label: "Best", val: p => p.best },
     { label: "Wins", val: p => p.wins },
     { label: "Streak", val: p => p.streak },
@@ -565,7 +575,7 @@ function leaderboard(stats) {
     const c = cols[sortCol];
     const order = [...stats.players].sort((a, b) => {
       const va = c.val(a), vb = c.val(b);
-      // Players with no score in this column (only possible for today's) always go last, by average from highest.
+      // Players with no value in this column (no score today, or no shared dive for Vs avg) always go last, by average from highest.
       if (va === null || vb === null) return va === null && vb === null ? b.avg - a.avg : va === null ? 1 : -1;
       const d = c.text ? va.localeCompare(vb) : va - vb;
       return (sortDir === "desc" ? -d : d) || b.avg - a.avg || a.name.localeCompare(b.name);
@@ -599,6 +609,10 @@ function leaderboard(stats) {
       : el("td", { class: p.today === topToday ? "today-top" : "" }, String(p.today)));
     r.appendChild(el("td", {}, String(p.dives)));
     r.appendChild(el("td", {}, Math.round(p.avg).toString()));
+    const va = p.vsAvg === null ? null : Math.round(p.vsAvg);
+    r.appendChild(va === null
+      ? el("td", { class: "today-none", title: "No dive shared with anyone yet" }, "·")
+      : el("td", { title: "Average points above or below the group average on the dives played" }, va > 0 ? "+" + va : va < 0 ? "\u2212" + -va : "0"));
     r.appendChild(el("td", {}, String(p.best)));
     r.appendChild(el("td", {}, String(p.wins)));
     r.appendChild(el("td", { title: "Longest: " + p.bestStreak }, String(p.streak)));
