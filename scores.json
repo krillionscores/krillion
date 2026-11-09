@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-06T14:27:56Z",
+  "updated": "2026-11-09T08:43:09Z",
   "scores": [
     { "dive": 112, "player": "James", "points": 385 },
     { "dive": 112, "player": "Felix", "points": 370 },
@@ -27,6 +27,21 @@
     { "dive": 114, "player": "Theo", "points": 330 },
     { "dive": 114, "player": "Dexter", "points": 445 },
     { "dive": 114, "player": "Felix", "points": 435 },
-    { "dive": 114, "player": "Joe P", "points": 545 }
+    { "dive": 114, "player": "Joe P", "points": 545 },
+    { "dive": 114, "player": "Rico", "points": 410 },
+    { "dive": 114, "player": "Barney E", "points": 280 },
+    { "dive": 114, "player": "David", "points": 360 },
+    { "dive": 115, "player": "Rat", "points": 265 },
+    { "dive": 115, "player": "Theo", "points": 275 },
+    { "dive": 115, "player": "Felix", "points": 325 },
+    { "dive": 115, "player": "Joe", "points": 190 },
+    { "dive": 115, "player": "James", "points": 330 },
+    { "dive": 115, "player": "Dexter", "points": 335 },
+    { "dive": 115, "player": "Barney", "points": 330 },
+    { "dive": 116, "player": "Rat", "points": 360 },
+    { "dive": 116, "player": "Dexter", "points": 385 },
+    { "dive": 116, "player": "Theo", "points": 230 },
+    { "dive": 116, "player": "Felix", "points": 445 },
+    { "dive": 116, "player": "James", "points": 445 }
   ]
 }
